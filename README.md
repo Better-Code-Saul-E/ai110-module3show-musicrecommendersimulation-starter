@@ -37,6 +37,41 @@ You can include a simple diagram or bullet list if helpful.
 
 4) It will score every song in the catalog, then it will order them be descending order. The top results will be selected and presented.
 
+graph TD
+    A[User Profile] --> C{Scoring Loop: Evaluate Every Song}
+    B[songs.csv Catalog] --> C
+    
+    C --> D{Check Genre}
+    D -->|Match| D1[+2.0 Points]
+    D -->|No Match| D2[+0 Points]
+    
+    C --> E{Check Mood}
+    E -->|Match| E1[+1.0 Point]
+    E -->|No Match| E2[+0 Points]
+    
+    C --> F{Calculate Energy Gap}
+    F --> F1[+ 1.0 - abs(song_energy - target_energy)]
+    
+    D1 --> G
+    D2 --> G
+    E1 --> G
+    E2 --> G
+    F1 --> G
+    
+    G[Sum Total Score for Song] --> H[Ranking Rule: Sort All Songs Descending]
+    H --> I[Output: Top 5 Recommendations]
+
+The Final algorithm recipe
+The system calculates a score for each track using:
+Genre match +2.0 points
+Mood match +1.0 points
+Energy proximity up to +1.0 points
+
+Some of the potential biases:
+Genre match: The genre is weighted twice as heavy as mood or energy, The system might ignore a good match because it determines the user prefers a genre
+Missing context: The system does not account for more favorite generes and it doesnt adapt to the recent history
+
+
 ---
 
 ## Getting Started
