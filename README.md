@@ -29,6 +29,14 @@ Some prompts to answer:
 
 You can include a simple diagram or bullet list if helpful.
 
+1) Each song will be treated as categorical or numical based on its values like a scale from 0.0-1.0 or  'pop', 'rock'
+
+2) The profile stores the users preferences based on the songs attributes they tend to like. A favorite genre, favorite mood, and target energy.
+
+3) The recommender will calculate a numerical score for a single song based ont the users preferences. For Categorical properties, it will give +2.0 points for a matching genre, and +1.0 point for a matching mood. For Numberical properties it will calculate the difference between the songs energy and the users target energy. If there is a smaller gap more points will be rewarded.
+
+4) It will score every song in the catalog, then it will order them be descending order. The top results will be selected and presented.
+
 ---
 
 ## Getting Started
