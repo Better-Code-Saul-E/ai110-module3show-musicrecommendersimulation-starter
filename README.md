@@ -72,6 +72,10 @@ Genre match: The genre is weighted twice as heavy as mood or energy, The system 
 Missing context: The system does not account for more favorite generes and it doesnt adapt to the recent history
 
 
+asdfa
+![CLI Terminal Output](images/recommender.png)
+
+
 ---
 
 ## Getting Started
