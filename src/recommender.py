@@ -39,12 +39,44 @@ class Recommender:
         self.songs = songs
 
     def recommend(self, user: UserProfile, k: int = 5) -> List[Song]:
-        # TODO: Implement recommendation logic
-        return self.songs[:k]
+        scored_songs = []
+        
+        for song in self.songs:
+            score = 0.0
+            
+            # 1. Genre Match (Phase 4 Weight: +1.0)
+            if song.genre.lower() == user.favorite_genre.lower():
+                score += 1.0
+                
+            # 2. Mood Match (Weight: +1.0)
+            if song.mood.lower() == user.favorite_mood.lower():
+                score += 1.0
+                
+            # 3. Energy Gap (Phase 4 Weight: up to +2.0)
+            energy_gap = abs(song.energy - user.target_energy)
+            score += max(0.0, 1.0 - energy_gap) * 2.0
+            
+            scored_songs.append((song, score))
+            
+        # Sort descending by score
+        scored_songs.sort(key=lambda x: x[1], reverse=True)
+        
+        # Return just the Song objects (up to k)
+        return [item[0] for item in scored_songs[:k]]
 
     def explain_recommendation(self, user: UserProfile, song: Song) -> str:
-        # TODO: Implement explanation logic
-        return "Explanation placeholder"
+        reasons = []
+        
+        if song.genre.lower() == user.favorite_genre.lower():
+            reasons.append("genre match")
+        if song.mood.lower() == user.favorite_mood.lower():
+            reasons.append("mood match")
+            
+        energy_gap = abs(song.energy - user.target_energy)
+        energy_points = max(0.0, 1.0 - energy_gap) * 2.0
+        reasons.append(f"energy match (+{energy_points:.2f})")
+        
+        return ", ".join(reasons)
 
 def load_songs(csv_path: str) -> List[Dict]:
     """
@@ -82,18 +114,17 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
 
     # 1. Genre Match (+2.0 points)
     if song['genre'] == user_prefs['favorite_genre'].lower():
-        score += 2.0
-        reasons.append("genre match (+2.0)")
+        score += 1.0
+        reasons.append("genre match (+1.0)")
 
     # 2. Mood Match (+1.0 point)
     if song['mood'] == user_prefs['favorite_mood'].lower():
         score += 1.0
         reasons.append("mood match (+1.0)")
 
-    # 3. Energy Gap (+ up to 1.0 point)
-    # The closer the song's energy is to the target, the smaller the gap.
+    # 3. Energy Gap (Doubled to up to +2.0 points)
     energy_gap = abs(song['energy'] - user_prefs['target_energy'])
-    energy_points = max(0.0, 1.0 - energy_gap) # Ensure we don't drop below 0 points
+    energy_points = max(0.0, 1.0 - energy_gap) * 2.0 
     score += energy_points
     reasons.append(f"energy match (+{energy_points:.2f})")
 
