@@ -1,3 +1,11 @@
-pandas
-pytest
-streamlit
+# Applied AI Music Recommender — Dependencies
+#
+# The core system requires NO external packages.
+# All modules use Python 3.8+ standard library only:
+#   csv, json, math, re, logging, dataclasses, collections, time, os, argparse
+#
+# Optional: for loading the real Kaggle dataset
+# kaggle>=1.6.0
+#
+# Optional: for running tests with pytest (unittest works without it)
+# pytest>=7.0.0
