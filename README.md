@@ -1,155 +1,203 @@
-# 🎵 Music Recommender Simulation
+# 🎵 Applied AI Music Recommender System
 
-## Project Summary
-
-In this project you will build and explain a small music recommender system.
-
-Your goal is to:
-
-- Represent songs and a user "taste profile" as data
-- Design a scoring rule that turns that data into recommendations
-- Evaluate what your system gets right and wrong
-- Reflect on how this mirrors real world AI recommenders
-
-This project is a CLI based python application that simulates a music recommendation engine. It takes a user's taste profile and calculates the mathematical proximity to songs in a dataset to rank and recommend matches.
+> **Module 5 Final Project** — Extended from the Module 1–3 Music Recommender prototype into a full applied AI system with RAG retrieval, agentic planning, reliability testing, and production-grade guardrails.
 
 ---
 
-## How The System Works
+## Original Project
 
-Explain your design in plain language.
+This system evolves the **Module 1–3 Music Recommender**, which scored songs against user preference profiles (genre, mood, target energy) using a weighted scoring algorithm. The original system could recommend songs from a small hand-crafted CSV but lacked real data, natural language understanding, and reliability infrastructure.
 
-Some prompts to answer:
+---
 
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
+## What's New in This Version
 
-You can include a simple diagram or bullet list if helpful.
+| Feature | Status |
+|---|---|
+| Real-data pipeline (Kaggle or generated) | ✅ `src/data_loader.py` |
+| RAG retrieval (natural language queries) | ✅ `src/rag_retriever.py` |
+| Agentic workflow with observable steps | ✅ `src/agent.py` |
+| Input guardrails + structured logging | ✅ `src/guardrails.py` |
+| Reliability test harness (13 test cases) | ✅ `src/evaluator.py` |
+| 30 unit tests | ✅ `tests/test_recommender.py` |
 
-1) Each song will be treated as categorical or numical based on its values like a scale from 0.0-1.0 or  'pop', 'rock'
+---
 
-2) The profile stores the users preferences based on the songs attributes they tend to like. A favorite genre, favorite mood, and target energy.
+## System Architecture
 
-3) The recommender will calculate a numerical score for a single song based ont the users preferences. For Categorical properties, it will give +2.0 points for a matching genre, and +1.0 point for a matching mood. For Numberical properties it will calculate the difference between the songs energy and the users target energy. If there is a smaller gap more points will be rewarded.
-
-4) It will score every song in the catalog, then it will order them be descending order. The top results will be selected and presented.
-
-```mermaid
-graph TD
-    A[User Profile] --> C{Scoring Loop: Evaluate Every Song}
-    B[songs.csv Catalog] --> C
-    
-    C --> D{Check Genre}
-    D -->|Match| D1[+2.0 Points]
-    D -->|No Match| D2[+0 Points]
-    
-    C --> E{Check Mood}
-    E -->|Match| E1[+1.0 Point]
-    E -->|No Match| E2[+0 Points]
-    
-    C --> F{Calculate Energy Gap}
-    F --> F1[+ 1.0 - abs(song_energy - target_energy)]
-    
-    D1 --> G
-    D2 --> G
-    E1 --> G
-    E2 --> G
-    F1 --> G
-    
-    G[Sum Total Score for Song] --> H[Ranking Rule: Sort All Songs Descending]
-    H --> I[Output: Top 5 Recommendations]
+```
+User Input (profile or natural language)
+        │
+        ▼
+┌───────────────────┐
+│  guardrails.py    │  ← Input validation, sanitization, rate limiting
+└────────┬──────────┘
+         │ validated input
+         ▼
+┌───────────────────┐      ┌─────────────────────┐
+│   agent.py        │◄─────│  rag_retriever.py   │
+│  (Planner)        │      │  TF-IDF index        │
+│  7-step chain:    │      │  Query expansion     │
+│  1. parse_intent  │      │  Semantic retrieval  │
+│  2. rag_retrieve  │      └─────────────────────┘
+│  3. score_rank    │
+│  4. check_diversity│     ┌─────────────────────┐
+│  5. confidence    │◄─────│  recommender.py     │
+│  6. retry?        │      │  Weighted scoring   │
+│  7. explain       │      │  Confidence scoring  │
+└────────┬──────────┘      └─────────────────────┘
+         │
+         ▼
+┌───────────────────┐
+│  data_loader.py   │  ← Kaggle CSV or generated realistic dataset
+└───────────────────┘
+         │
+         ▼                 ┌─────────────────────┐
+   AgentResult             │   evaluator.py      │
+   (songs +                │   13 test cases     │
+    confidence +           │   pass/fail scores  │
+    reasoning trace)       │   JSON export       │
+                           └─────────────────────┘
 ```
 
-![CLI Terminal Output](images/recommender.png)
-
-The Final algorithm recipe
-The system calculates a score for each track using:
-Genre match +2.0 points
-Mood match +1.0 points
-Energy proximity up to +1.0 points
-
-Some of the potential biases:
-Genre match: The genre is weighted twice as heavy as mood or energy, The system might ignore a good match because it determines the user prefers a genre
-Missing context: The system does not account for more favorite generes and it doesnt adapt to the recent history
-
-
-![CLI Terminal Output](images/recommender.png)
-
+**Data flows:** raw query → guardrails → agent planner → RAG retriever (candidates) → scorer (ranked) → diversity/confidence check → [retry if needed] → explanations → output
 
 ---
 
-## Getting Started
-
-### Setup
-
-1. Create a virtual environment (optional but recommended):
-
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate      # Mac or Linux
-   .venv\Scripts\activate         # Windows
-
-2. Install dependencies
+## Setup
 
 ```bash
-pip install -r requirements.txt
+# 1. Clone the repo
+git clone https://github.com/YOUR_USERNAME/applied-ai-music-recommender.git
+cd applied-ai-music-recommender
+
+# 2. No external dependencies required!
+#    All modules use Python standard library only.
+#    (Optional: pip install kaggle  — only if using real Kaggle data)
+
+# 3. Run the full demo
+python run_simulation.py --mode both
+
+# 4. Run with a custom query
+python run_simulation.py --query "chill jazz for a rainy afternoon"
+
+# 5. Run the test harness
+python -m src.evaluator
+
+# 6. Run unit tests
+python -m unittest tests/test_recommender.py -v
 ```
 
-3. Run the app:
+### Using Real Kaggle Data (Optional)
+
+The system works out-of-the-box with a statistically realistic generated dataset. To use the real 114k-song Kaggle dataset:
 
 ```bash
-python -m src.main
+pip install kaggle
+kaggle datasets download -d maharshipandya/-spotify-tracks-dataset
+unzip spotify-tracks-dataset.zip
+mv dataset.csv data/spotify_tracks.csv
+python run_simulation.py  # auto-detects and loads real data
 ```
 
-### Running Tests
+---
 
-Run the starter tests with:
+## Sample Interactions
 
-```bash
-pytest
+### Classic Profile Mode
+```
+Profile: High-Energy Pop | Genre: pop | Mood: happy | Energy: 0.9
+  ♪  Fire Dream [Radio Edit] — Ed Sheeran
+     Score: 4.00 | genre match (+1.0), mood match (+1.0), energy match (+2.00)
+  ♪  Night Gold — The Weeknd
+     Score: 3.97 | genre match, mood match, energy match (+1.97)
 ```
 
-You can add more tests in `tests/test_recommender.py`.
+### Agentic Mode (Natural Language)
+```
+Query: "chill lo-fi beats for a late night study session"
+
+  📋 Intent: genre=lo-fi, mood=chill, energy=0.3
+  🔍 RAG: 40 candidates retrieved (confidence=0.44)
+  🎵 Top pick: 'Drift Haze Pt. II' by Øneheart
+  📊 Confidence: [████████░░] 0.87
+
+  1. Drift Haze Pt. II — Øneheart  [lo-fi / chill / energy 0.35]
+     Why: matches your lo-fi preference, chill mood, energy level spot-on, acoustic texture
+  2. Quiet Study — Idealism  [lo-fi / chill / energy 0.36]
+  3. Warm Quiet — Idealism   [lo-fi / chill / energy 0.38]
+```
+
+### Test Harness
+```
+  ✅ [happy_pop_returns_results]       (1ms)
+  ✅ [lofi_chill_genre_match]          (1ms)
+  ✅ [rock_intense_energy]             (0ms)
+  ✅ [natural_query_study_session]     (7ms)
+  ✅ [adversarial_conflicting_prefs]   (1ms)
+  ✅ [adversarial_invalid_energy]      (1ms)
+  ...
+  Pass rate: 100% | Avg confidence: 0.697
+```
 
 ---
 
-## Experiments You Tried
+## Design Decisions
 
-Use this section to document the experiments you ran. For example:
+**Why TF-IDF instead of neural embeddings for RAG?**
+Neural embeddings (OpenAI, Cohere) would require an API key and network call per query — breaking offline use and adding latency. TF-IDF runs in ~1ms, is fully deterministic, and is interpretable: you can see exactly which terms drove each match. The interface is abstraction-compatible: swapping in embeddings later requires only changing `TFIDFIndex.query()`.
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+**Why mood derivation instead of a mood column?**
+Real Spotify datasets don't include mood labels. Deriving mood from energy + valence mirrors the Russell Circumplex Model of Affect — a research-backed framework for mapping audio features to emotional states. This makes the system generalize to any Spotify-format dataset.
 
-I created a profile that asked for ambient music but with a high energy. The orginal system failed and gave them songs with an energy of 0.26, just because they matched the genre
+**Why a 7-step agent instead of a simple function call?**
+Each step is observable, logged, and independently testable. The retry mechanism (Step 6) provides real adaptive behavior: if confidence drops below 0.45, the agent broadens its genre constraint and re-searches. This is meaningfully different from a lookup function.
 
-I also changed the scoring logic to make the genre worth only 1 point and energy up to 2 points. This fixed the problem above.
-
----
-
-## Limitations and Risks
-
-Summarize some limitations of your recommender.
-
-- The system initially suffered from prioitizing categorical tags like genre over an energy match.
-- The data set is small and lacks representation for sever major generas like classical or hip hop.
-- The profiles do not adapt to the users recent listening history
+**Trade-offs made:**
+- Generated data uses real artist names and genre-accurate audio feature distributions, but songs are procedurally titled. Loading real Kaggle data replaces this entirely.
+- The diversity check flags but doesn't force-rerank results — preserving scoring integrity over aesthetic variety.
+- Rate limiting is per-session only; a deployed version would need Redis or a DB-backed store.
 
 ---
 
-## Reflection
+## Testing Summary
 
-Read and complete `model_card.md`:
+**Unit tests (30 total, 30 passed):**
+- `TestScoreSong` — scoring algorithm correctness
+- `TestRecommender` — OOP API, confidence scoring
+- `TestRecommendSongs` — dict-based backward-compat API
+- `TestDataLoader` — generation, field validation, mood derivation
+- `TestRAGRetriever` — index building, query, expansion, error handling
+- `TestGuardrails` — validation, injection blocking, clamping, defaults
 
-[**Model Card**](model_card.md)
+**Reliability harness (13 cases, 13 passed):**
+- Functional: genre/mood/energy correctness for 5 profiles
+- RAG/NL: 3 natural language query tests
+- Adversarial: conflicting prefs, empty query, invalid energy
+- Consistency: determinism across runs
+- Diversity: multi-artist output
 
-Write 1 to 2 paragraphs here about what you learned:
+**What didn't work initially:**
+- The `validate_user_prefs()` function crashed on non-dict input because `dict()` was called before the type check — caught by the test harness.
+- The diversity check flagged all lo-fi queries as "low diversity" because the genre-matched catalog is intentionally narrow. This is correct behavior, not a bug; the warning is surfaced to the user without changing results.
 
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
+---
 
-Building this project has taught me that recommendations are complex mathematical formulas that take many user preferences into consideration. Ai tool have helped me speed up the coding process but I always had to double check its aligned with my vision. I was suprised how adjusting a single vairable would complete change the personality of the user. This can create bias if the weights are unbalanced or the datasets are small.
+## Reflection & Ethics
 
+**Limitations:**
+- Mood labels are derived, not ground-truth. A song labeled "intense" by energy/valence heuristics might subjectively feel "melancholic" to some listeners.
+- The generated dataset uses real artist names but synthetic song titles. This means artist-name queries ("give me something like Drake") work, but title-based searches won't match real songs.
+- TF-IDF has no semantic understanding — "happy" and "joyful" are related only if both appear in the same document, not by meaning.
+
+**Misuse potential:**
+- A recommendation system could be manipulated to only surface certain artists (payola). Mitigation: scoring is fully transparent and logged; genre/mood weights are published.
+- Natural language parsing could be prompted with injection attempts. Mitigation: `validate_query()` blocks known injection patterns before any processing.
+
+**Surprises during testing:**
+- The adversarial "ambient + intense + 0.95 energy" profile still returned results because energy proximity is the dominant signal when genre/mood both miss. The system degrades gracefully rather than returning nothing.
+- Confidence scores were higher than expected (avg 0.697) — the TF-IDF retrieval pre-filters candidates well enough that the scorer finds strong matches even for unusual queries.
+
+**AI collaboration:**
+- *Helpful:* Claude suggested deriving mood from the Russell Circumplex Model, which turned out to be a cleaner and more defensible approach than manual mood mapping.
+- *Incorrect:* An early suggestion used `sklearn.TfidfVectorizer` as the RAG backend, which would have added a dependency. The from-scratch TF-IDF implementation is more appropriate for a zero-dependency educational project.
